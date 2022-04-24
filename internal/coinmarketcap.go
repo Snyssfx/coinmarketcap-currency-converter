@@ -16,8 +16,8 @@ const (
 	quotesPath   = "/v1/cryptocurrency/quotes/latest"
 )
 
-// CoinMarketCapConverter is a client for coinmarketcap.com API.
-type CoinMarketCapConverter struct {
+// CoinMarketCapAPI is a client for coinmarketcap.com API.
+type CoinMarketCapAPI struct {
 	client client
 	url    string
 	apiKey string
@@ -27,9 +27,9 @@ type client interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-// NewCoinMarketCapConverter creates CoinMarketCapConverter.
-func NewCoinMarketCapConverter(client client, url, apiKey string) *CoinMarketCapConverter {
-	return &CoinMarketCapConverter{
+// NewCoinMarketCapAPI creates CoinMarketCapConverter.
+func NewCoinMarketCapAPI(client client, url, apiKey string) *CoinMarketCapAPI {
+	return &CoinMarketCapAPI{
 		client: client,
 		url:    url,
 		apiKey: apiKey,
@@ -37,10 +37,10 @@ func NewCoinMarketCapConverter(client client, url, apiKey string) *CoinMarketCap
 }
 
 // Convert gets the price of 1 unit of "from" currency by calling the quotes API method.
-func (c *CoinMarketCapConverter) Convert(from, to string) (*decimal.Decimal, error) {
+func (c *CoinMarketCapAPI) Convert(from, to string) (decimal.Decimal, error) {
 	req, err := http.NewRequest("GET", c.url+quotesPath, nil)
 	if err != nil {
-		return nil, fmt.Errorf("cannot create req: %w", err)
+		return decimal.Zero, fmt.Errorf("cannot create req: %w", err)
 	}
 
 	q := url.Values{}
@@ -53,7 +53,7 @@ func (c *CoinMarketCapConverter) Convert(from, to string) (*decimal.Decimal, err
 
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("cannot do req: %w", err)
+		return decimal.Zero, fmt.Errorf("cannot do req: %w", err)
 	}
 
 	defer resp.Body.Close()
@@ -61,24 +61,24 @@ func (c *CoinMarketCapConverter) Convert(from, to string) (*decimal.Decimal, err
 	decoded := Response{}
 	err = d.Decode(&decoded)
 	if err != nil {
-		return nil, fmt.Errorf("cannot decode resp: %w", err)
+		return decimal.Zero, fmt.Errorf("cannot decode resp: %w", err)
 	}
 
 	if resp.StatusCode != 200 {
-		return nil, fmt.Errorf("status code is not 200: body:\n%v", string(resp.Status))
+		return decimal.Zero, fmt.Errorf("status code is not 200: body:\n%v", string(resp.Status))
 	}
 
 	resultedCur, ok := decoded.Data[from]
 	if !ok {
-		return nil, fmt.Errorf("cannot find 'from' %q in response", from)
+		return decimal.Zero, fmt.Errorf("cannot find 'from' %q in response", from)
 	}
 
 	price, ok := resultedCur.Quote[to]
 	if !ok {
-		return nil, fmt.Errorf("cannot find 'to' %q in response", to)
+		return decimal.Zero, fmt.Errorf("cannot find 'to' %q in response", to)
 	}
 
-	return &price.Price, nil
+	return price.Price, nil
 }
 
 type Response struct {

@@ -17,7 +17,7 @@ func TestCoinMarketCapConverter_Convert(t *testing.T) {
 		client  client
 		from    string
 		to      string
-		want    *decimal.Decimal
+		want    decimal.Decimal
 		wantErr string
 	}{
 		{
@@ -48,9 +48,9 @@ func TestCoinMarketCapConverter_Convert(t *testing.T) {
 			}),
 			from: "USD",
 			to:   "ETH",
-			want: func() *decimal.Decimal {
+			want: func() decimal.Decimal {
 				d, _ := decimal.NewFromString("0.5099750002761636")
-				return &d
+				return d
 			}(),
 			wantErr: "",
 		},
@@ -72,13 +72,13 @@ func TestCoinMarketCapConverter_Convert(t *testing.T) {
 			}),
 			from:    "USD",
 			to:      "ETH",
-			want:    nil,
+			want:    decimal.Zero,
 			wantErr: "status code is not 200",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			c := NewCoinMarketCapConverter(tt.client, "test_url", "test_key")
+			c := NewCoinMarketCapAPI(tt.client, "test_url", "test_key")
 
 			got, err := c.Convert(tt.from, tt.to)
 

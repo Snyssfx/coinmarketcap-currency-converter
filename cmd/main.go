@@ -51,11 +51,13 @@ func main() {
 		),
 	).Sugar()
 
-	converter := internal.NewCoinMarketCapConverter(http.DefaultClient, sandboxURL, sandboxAPI)
-	s := internal.NewService(log, converter)
+	unitConverter := internal.NewCoinMarketCapAPI(http.DefaultClient, sandboxURL, sandboxAPI)
+	service := internal.NewService(log, unitConverter)
+	parser := internal.NewParser()
+	converter := internal.NewConverter(parser, service)
 
 	amount, from, to := ctx.Args[0], ctx.Args[1], ctx.Args[2]
-	result, err := s.Convert(amount, from, to)
+	result, err := converter.Convert(amount, from, to)
 	if err != nil {
 		log.Fatalf("cannot convert: %s", err.Error())
 	}
